@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox
 
 from app.db import get_connection, close_connection
-from app.gui.main_window import MainWindow
 
 
 class LoginWindow:
@@ -24,10 +23,23 @@ class LoginWindow:
 
         self.create_widgets()
 
+    def clear_window(self):
+        """
+        Удаляет все текущие элементы из главного окна.
+        """
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
     def create_widgets(self):
         """
         Создает элементы интерфейса окна входа.
         """
+        self.clear_window()
+
+        self.root.title("Вход в систему")
+        self.root.geometry("420x320")
+        self.root.minsize(420, 320)
+
         title_label = tk.Label(
             self.root,
             text="Авторизация",
@@ -44,6 +56,7 @@ class LoginWindow:
 
         self.login_entry = tk.Entry(self.root, font=("Arial", 11), width=28)
         self.login_entry.pack(pady=(0, 10))
+        self.login_entry.focus()
 
         password_label = tk.Label(
             self.root,
@@ -72,6 +85,9 @@ class LoginWindow:
             command=self.root.destroy
         )
         exit_button.pack()
+
+        # Позволяем входить по нажатию Enter.
+        self.root.bind("<Return>", lambda event: self.authenticate_user())
 
     def authenticate_user(self):
         """
@@ -110,11 +126,10 @@ class LoginWindow:
             user_login = user[0]
             user_role = user[1]
 
-            # Очищаем текущее окно перед открытием главного окна.
-            for widget in self.root.winfo_children():
-                widget.destroy()
+            self.clear_window()
 
-            # Открываем главное окно приложения.
+            # Локальный импорт нужен, чтобы избежать циклического импорта.
+            from app.gui.main_window import MainWindow
             MainWindow(self.root, user_login, user_role)
 
         except Exception as error:

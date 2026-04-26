@@ -29,6 +29,13 @@ class MainWindow:
 
         self.create_widgets()
 
+    def clear_window(self):
+        """
+        Удаляет все элементы из главного окна.
+        """
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
     def create_widgets(self):
         """
         Создает элементы интерфейса главного окна.
@@ -54,7 +61,6 @@ class MainWindow:
         )
         info_label.pack(pady=(0, 25))
 
-        # Текстовое пояснение по правам доступа.
         if self.user_role == "head":
             access_text = "Доступно: просмотр отчетов."
         else:
@@ -67,7 +73,6 @@ class MainWindow:
         )
         access_label.pack(pady=(0, 20))
 
-        # Рамка для основных кнопок.
         buttons_frame = tk.Frame(self.root)
         buttons_frame.pack(pady=10)
 
@@ -107,7 +112,6 @@ class MainWindow:
         )
         reports_button.grid(row=1, column=1, padx=10, pady=10)
 
-        # Если вошел руководитель, оставляем доступ только к отчетам.
         if self.user_role == "head":
             departments_button.config(state="disabled")
             employees_button.config(state="disabled")
@@ -121,6 +125,15 @@ class MainWindow:
             command=self.check_database_connection
         )
         check_button.pack(pady=(25, 10))
+
+        logout_button = tk.Button(
+            self.root,
+            text="Сменить пользователя",
+            font=("Arial", 12),
+            width=18,
+            command=self.logout
+        )
+        logout_button.pack(pady=10)
 
         exit_button = tk.Button(
             self.root,
@@ -178,3 +191,14 @@ class MainWindow:
             cursor.close()
         finally:
             close_connection(connection)
+
+    def logout(self):
+        """
+        Выполняет выход из текущей учетной записи
+        и возвращает пользователя на окно авторизации.
+        """
+        self.clear_window()
+
+        # Локальный импорт нужен, чтобы избежать циклического импорта.
+        from app.gui.login_window import LoginWindow
+        LoginWindow(self.root)
