@@ -9,7 +9,7 @@ class DepartmentsWindow:
     Окно раздела 'Отделы'.
 
     В этом окне отображается список отделов из базы данных.
-    Пока здесь реализован только просмотр данных и обновление таблицы.
+    Также реализовано добавление нового отдела.
     """
 
     def __init__(self, parent):
@@ -41,6 +41,15 @@ class DepartmentsWindow:
         buttons_frame = tk.Frame(self.window)
         buttons_frame.pack(pady=(0, 15))
 
+        add_button = tk.Button(
+            buttons_frame,
+            text="Добавить отдел",
+            font=("Arial", 11),
+            width=18,
+            command=self.open_add_department_window
+        )
+        add_button.grid(row=0, column=0, padx=10)
+
         refresh_button = tk.Button(
             buttons_frame,
             text="Обновить список",
@@ -48,7 +57,7 @@ class DepartmentsWindow:
             width=18,
             command=self.load_departments
         )
-        refresh_button.grid(row=0, column=0, padx=10)
+        refresh_button.grid(row=0, column=1, padx=10)
 
         close_button = tk.Button(
             buttons_frame,
@@ -57,7 +66,7 @@ class DepartmentsWindow:
             width=18,
             command=self.window.destroy
         )
-        close_button.grid(row=0, column=1, padx=10)
+        close_button.grid(row=0, column=2, padx=10)
 
         # Рамка для таблицы и полосы прокрутки.
         table_frame = tk.Frame(self.window)
@@ -126,3 +135,90 @@ class DepartmentsWindow:
 
         finally:
             close_connection(connection)
+
+    def open_add_department_window(self):
+        """
+        Открывает окно для добавления нового отдела.
+        """
+        add_window = tk.Toplevel(self.window)
+        add_window.title("Добавление отдела")
+        add_window.geometry("400x220")
+        add_window.resizable(False, False)
+
+        tk.Label(
+            add_window,
+            text="Номер отдела:",
+            font=("Arial", 11)
+        ).pack(pady=(20, 5))
+
+        department_id_entry = tk.Entry(add_window, font=("Arial", 11), width=30)
+        department_id_entry.pack(pady=5)
+
+        tk.Label(
+            add_window,
+            text="Название отдела:",
+            font=("Arial", 11)
+        ).pack(pady=(15, 5))
+
+        department_name_entry = tk.Entry(add_window, font=("Arial", 11), width=30)
+        department_name_entry.pack(pady=5)
+
+        def save_department():
+            """
+            Сохраняет новый отдел в базу данных.
+            """
+            department_id = department_id_entry.get().strip()
+            department_name = department_name_entry.get().strip()
+
+            if not department_id or not department_name:
+                messagebox.showwarning("Предупреждение", "Заполните все поля.")
+                return
+
+            if not department_id.isdigit():
+                messagebox.showwarning("Предупреждение", "Номер отдела должен быть числом.")
+                return
+
+            connection = get_connection()
+
+            if connection is None:
+                messagebox.showerror("Ошибка", "Не удалось подключиться к базе данных.")
+                return
+
+            try:
+                cursor = connection.cursor()
+
+                cursor.execute("""
+                    INSERT INTO departments (department_id, department_name)
+                    VALUES (%s, %s)
+                """, (int(department_id), department_name))
+
+                connection.commit()
+                cursor.close()
+
+                messagebox.showinfo("Успех", "Отдел успешно добавлен.")
+                add_window.destroy()
+                self.load_departments()
+
+            except Exception as error:
+                messagebox.showerror("Ошибка", f"Не удалось добавить отдел:\n{error}")
+
+            finally:
+                close_connection(connection)
+
+        save_button = tk.Button(
+            add_window,
+            text="Сохранить",
+            font=("Arial", 11),
+            width=15,
+            command=save_department
+        )
+        save_button.pack(pady=(20, 5))
+
+        cancel_button = tk.Button(
+            add_window,
+            text="Отмена",
+            font=("Arial", 11),
+            width=15,
+            command=add_window.destroy
+        )
+        cancel_button.pack(pady=5)
