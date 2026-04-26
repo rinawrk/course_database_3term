@@ -12,17 +12,18 @@ class DepartmentsWindow:
     Реализованы:
     - просмотр списка;
     - добавление нового отдела;
-    - редактирование выбранного отдела.
+    - редактирование выбранного отдела;
+    - удаление отдела.
     """
 
     def __init__(self, parent):
         # Создаем отдельное дочернее окно.
         self.window = tk.Toplevel(parent)
         self.window.title("Отделы")
-        self.window.geometry("850x520")
-        self.window.minsize(720, 420)
+        self.window.geometry("900x520")
+        self.window.minsize(760, 420)
 
-        # Здесь будет храниться таблица с данными.
+        # Таблица с данными отделов.
         self.tree = None
 
         self.create_widgets()
@@ -40,7 +41,6 @@ class DepartmentsWindow:
         )
         title_label.pack(pady=(20, 10))
 
-        # Верхняя панель с кнопками.
         buttons_frame = tk.Frame(self.window)
         buttons_frame.pack(pady=(0, 15))
 
@@ -62,6 +62,15 @@ class DepartmentsWindow:
         )
         edit_button.grid(row=0, column=1, padx=8)
 
+        delete_button = tk.Button(
+            buttons_frame,
+            text="Удалить отдел",
+            font=("Arial", 11),
+            width=18,
+            command=self.delete_department
+        )
+        delete_button.grid(row=0, column=2, padx=8)
+
         refresh_button = tk.Button(
             buttons_frame,
             text="Обновить список",
@@ -69,7 +78,7 @@ class DepartmentsWindow:
             width=18,
             command=self.load_departments
         )
-        refresh_button.grid(row=0, column=2, padx=8)
+        refresh_button.grid(row=0, column=3, padx=8)
 
         close_button = tk.Button(
             buttons_frame,
@@ -78,28 +87,23 @@ class DepartmentsWindow:
             width=18,
             command=self.window.destroy
         )
-        close_button.grid(row=0, column=3, padx=8)
+        close_button.grid(row=0, column=4, padx=8)
 
-        # Рамка для таблицы и полосы прокрутки.
         table_frame = tk.Frame(self.window)
         table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        # Создаем таблицу.
         self.tree = ttk.Treeview(
             table_frame,
             columns=("department_id", "department_name"),
             show="headings"
         )
 
-        # Настраиваем заголовки столбцов.
         self.tree.heading("department_id", text="Номер отдела")
         self.tree.heading("department_name", text="Название отдела")
 
-        # Настраиваем ширину столбцов.
         self.tree.column("department_id", width=150, anchor="center")
         self.tree.column("department_name", width=550, anchor="w")
 
-        # Вертикальная полоса прокрутки.
         scrollbar = ttk.Scrollbar(
             table_frame,
             orient="vertical",
@@ -107,7 +111,6 @@ class DepartmentsWindow:
         )
         self.tree.configure(yscrollcommand=scrollbar.set)
 
-        # Размещаем таблицу и полосу прокрутки.
         self.tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
@@ -123,7 +126,6 @@ class DepartmentsWindow:
 
         try:
             cursor = connection.cursor()
-
             cursor.execute("""
                 SELECT department_id, department_name
                 FROM departments
@@ -131,11 +133,9 @@ class DepartmentsWindow:
             """)
             rows = cursor.fetchall()
 
-            # Очищаем текущие строки таблицы перед новой загрузкой.
             for item in self.tree.get_children():
                 self.tree.delete(item)
 
-            # Добавляем строки в таблицу.
             for row in rows:
                 self.tree.insert("", "end", values=row)
 
@@ -197,12 +197,10 @@ class DepartmentsWindow:
 
             try:
                 cursor = connection.cursor()
-
                 cursor.execute("""
                     INSERT INTO departments (department_id, department_name)
                     VALUES (%s, %s)
                 """, (int(department_id), department_name))
-
                 connection.commit()
                 cursor.close()
 
@@ -216,23 +214,21 @@ class DepartmentsWindow:
             finally:
                 close_connection(connection)
 
-        save_button = tk.Button(
+        tk.Button(
             add_window,
             text="Сохранить",
             font=("Arial", 11),
             width=15,
             command=save_department
-        )
-        save_button.pack(pady=(20, 5))
+        ).pack(pady=(20, 5))
 
-        cancel_button = tk.Button(
+        tk.Button(
             add_window,
             text="Отмена",
             font=("Arial", 11),
             width=15,
             command=add_window.destroy
-        )
-        cancel_button.pack(pady=5)
+        ).pack(pady=5)
 
     def open_edit_department_window(self):
         """
@@ -241,10 +237,7 @@ class DepartmentsWindow:
         selected_item = self.tree.selection()
 
         if not selected_item:
-            messagebox.showwarning(
-                "Предупреждение",
-                "Сначала выберите отдел в таблице."
-            )
+            messagebox.showwarning("Предупреждение", "Сначала выберите отдел в таблице.")
             return
 
         values = self.tree.item(selected_item[0], "values")
@@ -279,7 +272,7 @@ class DepartmentsWindow:
 
         def update_department():
             """
-            Обновляет название выбранного отдела в базе данных.
+            Обновляет название выбранного отдела.
             """
             new_department_name = department_name_entry.get().strip()
 
@@ -295,13 +288,11 @@ class DepartmentsWindow:
 
             try:
                 cursor = connection.cursor()
-
                 cursor.execute("""
                     UPDATE departments
                     SET department_name = %s
                     WHERE department_id = %s
                 """, (new_department_name, int(department_id)))
-
                 connection.commit()
                 cursor.close()
 
@@ -315,20 +306,86 @@ class DepartmentsWindow:
             finally:
                 close_connection(connection)
 
-        save_button = tk.Button(
+        tk.Button(
             edit_window,
             text="Сохранить",
             font=("Arial", 11),
             width=15,
             command=update_department
-        )
-        save_button.pack(pady=(20, 5))
+        ).pack(pady=(20, 5))
 
-        cancel_button = tk.Button(
+        tk.Button(
             edit_window,
             text="Отмена",
             font=("Arial", 11),
             width=15,
             command=edit_window.destroy
+        ).pack(pady=5)
+
+    def delete_department(self):
+        """
+        Удаляет выбранный отдел из базы данных.
+
+        Перед удалением проверяется:
+        1. выбран ли отдел;
+        2. нет ли у отдела связанных сотрудников.
+        """
+        selected_item = self.tree.selection()
+
+        if not selected_item:
+            messagebox.showwarning("Предупреждение", "Сначала выберите отдел в таблице.")
+            return
+
+        values = self.tree.item(selected_item[0], "values")
+        department_id = int(values[0])
+        department_name = values[1]
+
+        confirm = messagebox.askyesno(
+            "Подтверждение",
+            f"Удалить отдел '{department_name}'?"
         )
-        cancel_button.pack(pady=5)
+
+        if not confirm:
+            return
+
+        connection = get_connection()
+
+        if connection is None:
+            messagebox.showerror("Ошибка", "Не удалось подключиться к базе данных.")
+            return
+
+        try:
+            cursor = connection.cursor()
+
+            # Проверяем, есть ли у отдела сотрудники.
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM employees
+                WHERE department_id = %s
+            """, (department_id,))
+            employees_count = cursor.fetchone()[0]
+
+            if employees_count > 0:
+                messagebox.showwarning(
+                    "Предупреждение",
+                    "Нельзя удалить отдел, к которому привязаны сотрудники."
+                )
+                cursor.close()
+                return
+
+            # Если связанных сотрудников нет, удаляем отдел.
+            cursor.execute("""
+                DELETE FROM departments
+                WHERE department_id = %s
+            """, (department_id,))
+            connection.commit()
+            cursor.close()
+
+            messagebox.showinfo("Успех", "Отдел успешно удален.")
+            self.load_departments()
+
+        except Exception as error:
+            messagebox.showerror("Ошибка", f"Не удалось удалить отдел:\n{error}")
+
+        finally:
+            close_connection(connection)
