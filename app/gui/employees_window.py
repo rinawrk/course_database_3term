@@ -12,7 +12,8 @@ class EmployeesWindow:
     Реализованы:
     - просмотр списка;
     - добавление нового сотрудника;
-    - редактирование выбранного сотрудника.
+    - редактирование выбранного сотрудника;
+    - удаление сотрудника.
     """
 
     def __init__(self, parent):
@@ -51,7 +52,7 @@ class EmployeesWindow:
             width=20,
             command=self.open_add_employee_window
         )
-        add_button.grid(row=0, column=0, padx=10)
+        add_button.grid(row=0, column=0, padx=8)
 
         edit_button = tk.Button(
             buttons_frame,
@@ -60,7 +61,16 @@ class EmployeesWindow:
             width=20,
             command=self.open_edit_employee_window
         )
-        edit_button.grid(row=0, column=1, padx=10)
+        edit_button.grid(row=0, column=1, padx=8)
+
+        delete_button = tk.Button(
+            buttons_frame,
+            text="Удалить сотрудника",
+            font=("Arial", 11),
+            width=20,
+            command=self.delete_employee
+        )
+        delete_button.grid(row=0, column=2, padx=8)
 
         refresh_button = tk.Button(
             buttons_frame,
@@ -69,7 +79,7 @@ class EmployeesWindow:
             width=18,
             command=self.load_employees
         )
-        refresh_button.grid(row=0, column=2, padx=10)
+        refresh_button.grid(row=0, column=3, padx=8)
 
         close_button = tk.Button(
             buttons_frame,
@@ -78,7 +88,7 @@ class EmployeesWindow:
             width=18,
             command=self.window.destroy
         )
-        close_button.grid(row=0, column=3, padx=10)
+        close_button.grid(row=0, column=4, padx=8)
 
         # Рамка для таблицы.
         table_frame = tk.Frame(self.window)
@@ -395,7 +405,6 @@ class EmployeesWindow:
             cursor.close()
 
         except Exception as error:
-            close_connection(connection)
             messagebox.showerror("Ошибка", f"Не удалось загрузить данные сотрудника:\n{error}")
             return
 
@@ -560,3 +569,71 @@ class EmployeesWindow:
             width=16,
             command=edit_window.destroy
         ).pack(pady=5)
+
+    def delete_employee(self):
+        """
+        Удаляет выбранного сотрудника из базы данных.
+
+        Перед удалением проверяется:
+        1. выбран ли сотрудник;
+        2. нет ли у него связанных записей в таблице children.
+        """
+        selected_item = self.tree.selection()
+
+        if not selected_item:
+            messagebox.showwarning("Предупреждение", "Сначала выберите сотрудника в таблице.")
+            return
+
+        values = self.tree.item(selected_item[0], "values")
+        employee_id = int(values[0])
+        employee_name = values[1]
+
+        confirm = messagebox.askyesno(
+            "Подтверждение",
+            f"Удалить сотрудника '{employee_name}'?"
+        )
+
+        if not confirm:
+            return
+
+        connection = get_connection()
+
+        if connection is None:
+            messagebox.showerror("Ошибка", "Не удалось подключиться к базе данных.")
+            return
+
+        try:
+            cursor = connection.cursor()
+
+            # Проверяем, есть ли у сотрудника дети.
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM children
+                WHERE employee_id = %s
+            """, (employee_id,))
+            children_count = cursor.fetchone()[0]
+
+            if children_count > 0:
+                messagebox.showwarning(
+                    "Предупреждение",
+                    "Нельзя удалить сотрудника, у которого есть дети в базе данных."
+                )
+                cursor.close()
+                return
+
+            # Если связанных детей нет, удаляем сотрудника.
+            cursor.execute("""
+                DELETE FROM employees
+                WHERE employee_id = %s
+            """, (employee_id,))
+            connection.commit()
+            cursor.close()
+
+            messagebox.showinfo("Успех", "Сотрудник успешно удален.")
+            self.load_employees()
+
+        except Exception as error:
+            messagebox.showerror("Ошибка", f"Не удалось удалить сотрудника:\n{error}")
+
+        finally:
+            close_connection(connection)
