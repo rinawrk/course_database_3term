@@ -14,7 +14,8 @@ class ChildrenWindow:
     Реализованы:
     - просмотр списка;
     - добавление нового ребенка;
-    - редактирование выбранного ребенка.
+    - редактирование выбранного ребенка;
+    - удаление выбранного ребенка.
     """
 
     def __init__(self, parent):
@@ -63,6 +64,15 @@ class ChildrenWindow:
         )
         edit_button.grid(row=0, column=1, padx=8)
 
+        delete_button = tk.Button(
+            buttons_frame,
+            text="Удалить ребенка",
+            font=("Arial", 11),
+            width=18,
+            command=self.delete_child
+        )
+        delete_button.grid(row=0, column=2, padx=8)
+
         refresh_button = tk.Button(
             buttons_frame,
             text="Обновить список",
@@ -70,7 +80,7 @@ class ChildrenWindow:
             width=18,
             command=self.load_children
         )
-        refresh_button.grid(row=0, column=2, padx=8)
+        refresh_button.grid(row=0, column=3, padx=8)
 
         close_button = tk.Button(
             buttons_frame,
@@ -79,7 +89,7 @@ class ChildrenWindow:
             width=18,
             command=self.window.destroy
         )
-        close_button.grid(row=0, column=3, padx=8)
+        close_button.grid(row=0, column=4, padx=8)
 
         table_frame = tk.Frame(self.window)
         table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
@@ -514,3 +524,51 @@ class ChildrenWindow:
             width=16,
             command=edit_window.destroy
         ).pack(pady=5)
+
+    def delete_child(self):
+        """
+        Удаляет выбранного ребенка из базы данных.
+        """
+        selected_item = self.tree.selection()
+
+        if not selected_item:
+            messagebox.showwarning("Предупреждение", "Сначала выберите ребенка в таблице.")
+            return
+
+        values = self.tree.item(selected_item[0], "values")
+        birth_certificate_number = int(values[0])
+        child_name = values[1]
+
+        confirm = messagebox.askyesno(
+            "Подтверждение",
+            f"Удалить запись о ребенке '{child_name}'?"
+        )
+
+        if not confirm:
+            return
+
+        connection = get_connection()
+
+        if connection is None:
+            messagebox.showerror("Ошибка", "Не удалось подключиться к базе данных.")
+            return
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute("""
+                DELETE FROM children
+                WHERE birth_certificate_number = %s
+            """, (birth_certificate_number,))
+
+            connection.commit()
+            cursor.close()
+
+            messagebox.showinfo("Успех", "Запись о ребенке успешно удалена.")
+            self.load_children()
+
+        except Exception as error:
+            messagebox.showerror("Ошибка", f"Не удалось удалить запись о ребенке:\n{error}")
+
+        finally:
+            close_connection(connection)
