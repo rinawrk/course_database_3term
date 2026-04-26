@@ -1,15 +1,17 @@
 import tkinter as tk
 
-from app.gui.main_window import MainWindow
+from app.gui.login_window import LoginWindow
 
 
 def main():
     """
     Точка входа в приложение.
-    Создает и запускает главное окно Tkinter.
+
+    Сначала открывается окно входа в систему.
+    После успешной авторизации пользователь попадает в главное окно.
     """
     root = tk.Tk()
-    MainWindow(root)
+    LoginWindow(root)
     root.mainloop()
 
 

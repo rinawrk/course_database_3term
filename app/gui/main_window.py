@@ -11,11 +11,18 @@ from app.gui.reports_window import ReportsWindow
 class MainWindow:
     """
     Главное окно приложения.
-    Содержит кнопки перехода в основные разделы и кнопку проверки подключения к БД.
+
+    Содержит:
+    - информацию о текущем пользователе;
+    - кнопки перехода в основные разделы;
+    - кнопку проверки подключения к базе данных.
     """
 
-    def __init__(self, root):
+    def __init__(self, root, user_login, user_role):
         self.root = root
+        self.user_login = user_login
+        self.user_role = user_role
+
         self.root.title("Отдел кадров")
         self.root.geometry("900x600")
         self.root.minsize(800, 500)
@@ -32,6 +39,13 @@ class MainWindow:
             font=("Arial", 20, "bold")
         )
         title_label.pack(pady=(30, 10))
+
+        user_info_label = tk.Label(
+            self.root,
+            text=f"Пользователь: {self.user_login} | Роль: {self.user_role}",
+            font=("Arial", 11)
+        )
+        user_info_label.pack(pady=(0, 10))
 
         info_label = tk.Label(
             self.root,
