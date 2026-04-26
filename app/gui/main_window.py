@@ -12,10 +12,10 @@ class MainWindow:
     """
     Главное окно приложения.
 
-    Содержит:
-    - информацию о текущем пользователе;
-    - кнопки перехода в основные разделы;
-    - кнопку проверки подключения к базе данных.
+    В окне отображаются:
+    - информация о текущем пользователе;
+    - кнопки перехода в разделы;
+    - ограничения доступа в зависимости от роли пользователя.
     """
 
     def __init__(self, root, user_login, user_role):
@@ -54,7 +54,20 @@ class MainWindow:
         )
         info_label.pack(pady=(0, 25))
 
-        # Рамка для основных кнопок навигации.
+        # Текстовое пояснение по правам доступа.
+        if self.user_role == "head":
+            access_text = "Доступно: просмотр отчетов."
+        else:
+            access_text = "Доступно: работа со всеми разделами приложения."
+
+        access_label = tk.Label(
+            self.root,
+            text=access_text,
+            font=("Arial", 11, "italic")
+        )
+        access_label.pack(pady=(0, 20))
+
+        # Рамка для основных кнопок.
         buttons_frame = tk.Frame(self.root)
         buttons_frame.pack(pady=10)
 
@@ -93,6 +106,12 @@ class MainWindow:
             command=self.open_reports_window
         )
         reports_button.grid(row=1, column=1, padx=10, pady=10)
+
+        # Если вошел руководитель, оставляем доступ только к отчетам.
+        if self.user_role == "head":
+            departments_button.config(state="disabled")
+            employees_button.config(state="disabled")
+            children_button.config(state="disabled")
 
         check_button = tk.Button(
             self.root,
