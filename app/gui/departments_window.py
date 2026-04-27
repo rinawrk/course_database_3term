@@ -133,9 +133,11 @@ class DepartmentsWindow:
             """)
             rows = cursor.fetchall()
 
+            # Полностью очищаем таблицу перед новой загрузкой.
             for item in self.tree.get_children():
                 self.tree.delete(item)
 
+            # Заполняем таблицу отделами из базы данных.
             for row in rows:
                 self.tree.insert("", "end", values=row)
 
@@ -153,8 +155,8 @@ class DepartmentsWindow:
         """
         add_window = tk.Toplevel(self.window)
         add_window.title("Добавление отдела")
-        add_window.geometry("400x220")
-        add_window.resizable(False, False)
+        add_window.geometry("400x280")
+        add_window.resizable(True, True)
 
         tk.Label(
             add_window,
@@ -246,8 +248,8 @@ class DepartmentsWindow:
 
         edit_window = tk.Toplevel(self.window)
         edit_window.title("Редактирование отдела")
-        edit_window.geometry("400x220")
-        edit_window.resizable(False, False)
+        edit_window.geometry("400x280")
+        edit_window.resizable(True, True)
 
         tk.Label(
             edit_window,
